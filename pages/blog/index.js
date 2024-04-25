@@ -38,36 +38,31 @@ export default function Blog({ posts, menu }) {
 export async function getServerSideProps() {
 
   const GET_POSTS = gql`
-    query GetAllPosts{
-      menu(idType: SLUG, id: "main-menu") {
-        menuItems {
-          nodes {
-            label
-            uri
-          }
-        }
-      }
-      posts {
+  query GetAllPosts {
+    menu(idType: SLUG, id: "main-menu") {
+      menuItems {
         nodes {
-          __typename
-          ...PostCard
+          label
+          uri
         }
       }
     }
-
-    fragment PostCard on Post{
+    posts {
+      nodes {
         title
         content
         uri
-        featuredImage{
-          node{
+        featuredImage {
+          node {
             sizes
             mediaDetails {
               file
             }
           }
         }
+      }
     }
+  }
   `
   const response = await client.query({
     query: GET_POSTS

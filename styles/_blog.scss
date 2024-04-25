@@ -1,0 +1,10 @@
+.blog-page{
+    .blog-wrapper{
+        display: grid;
+        grid-template-columns: calc(70% - 20px) 30%;
+        grid-gap: 20px;
+        @media (max-width: 1099.98px){
+            grid-template-columns: 1fr;
+        }
+    }
+}

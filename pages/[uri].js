@@ -1,61 +1,71 @@
 import { gql } from '@apollo/client';
 import Head from 'next/head'
 import Banner from '../components/Banner';
-import Footer from '../components/Footer'
+import Layout from '../components/Layout';
+
 import { client } from '../lib/apollo';
 
-export default function SlugPage({ page }) {
+export default function SlugPage({ page, menu }) {
   console.log(page);
   let sections = page.sections.sections
   console.log(sections);
   return (
     <div>
       <Head>
-        <title>{page.title} - Headless WP Next Starter</title>
+        <title>{page.title} - Travel</title>
         <link rel="icon" href="favicon.ico"></link>
       </Head>
 
       <main>
-      {
-        sections.map((section, index) => {
-            const typeName = section.__typename;
-            switch(typeName){
-            case 'Page_Sections_Sections_Banner':
-                return <Banner {...section} key={index}/>
-                
-            default: 
-            return ''
-            
-            }              
-        })
-      }
-         
+        <Layout menu={menu}>
+
+          {
+            sections.map((section, index) => {
+              const typeName = section.__typename;
+              switch (typeName) {
+                case 'SectionsSectionsBannerLayout':
+                  return <Banner {...section} key={index} />
+
+                default:
+                  return ''
+
+              }
+            })
+          }
+        </Layout>
+
       </main>
 
-      <Footer></Footer>
 
     </div>
   )
 }
 
 
-export async function getStaticProps({ params }){
+export async function getServerSideProps({ params }) {
   const GET_PAGES_BY_URI = gql`
   query GetAllPages($id: ID!) {
+    menu(idType: SLUG, id: "main-menu") {
+      menuItems {
+        nodes {
+          label
+          uri
+        }
+      }
+    }
     page(idType: URI, id: $id) {
       title
       slug
       uri
       sections {
         sections {
-          ... on Page_Sections_Sections_Banner {
+          ... on SectionsSectionsBannerLayout {
             title
             content
-            bannerSize
             image {
-              mediaItemUrl
-              mediaDetails {
-                file
+              node {
+                mediaItemUrl
+                sizes
               }
             }
           }
@@ -65,24 +75,18 @@ export async function getStaticProps({ params }){
   }
   `
   const response = await client.query({
-    query : GET_PAGES_BY_URI,
+    query: GET_PAGES_BY_URI,
     variables: {
       id: params.uri
     }
   })
   const page = response?.data?.page
+  const menu = response?.data?.menu?.menuItems?.nodes
   return {
     props: {
-      page
+      page,
+      menu
     }
   }
-}
-
-export async function getStaticPaths(){
-    const paths = []
-    return {
-        paths,
-        fallback: 'blocking'
-    }
 }
 

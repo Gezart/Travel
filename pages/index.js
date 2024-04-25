@@ -1,63 +1,136 @@
-import Head from 'next/head';
-import Footer from '../components/Footer';
-import PostCard from '../components/PostCard';
-import { client } from '../lib/apollo';
 import { gql } from '@apollo/client';
+import Head from 'next/head'
+import Banner from '../components/Banner';
+import Layout from '../components/Layout';
 
-export default function Home({ posts }) {
+import { client } from '../lib/apollo';
+import AboutKosova from '../components/AboutKosova';
+import MostVisitedPlaces from '../components/MostVisitedPlaces';
+
+export default function Home({ page, menu }) {
+  let sections = page.sections.sections
+  console.log(sections);
   return (
-    <div className="container">
+    <>
       <Head>
-        <title>Headless WP Next Starter</title>
+        <title>{page?.title} - Travel</title>
         <link rel="icon" href="favicon.ico"></link>
       </Head>
 
-      <main>
-        <h1 className="title">
-          Headless WordPress Next.js Starter
-        </h1>
+      <main className='home page'>
+        <Layout menu={menu}>
 
-        <p className="description">
-          Get started by editing <code>pages/index.js</code>
-        </p>
-
-        <div className="grid">
           {
-            posts.map((post) => {
-              return (
-                <PostCard key={post.uri} post={post}></PostCard>
-              )
+            sections?.map((section, index) => {
+              const typeName = section.__typename;
+              switch (typeName) {
+                case 'SectionsSectionsBannerLayout':
+                  return <Banner {...section} key={index} />
+                case 'SectionsSectionsAboutKosovaLayout':
+                  return <AboutKosova {...section} key={index} />
+                case 'SectionsSectionsMostVisitedPlacesLayout':
+                  return <MostVisitedPlaces {...section} key={index} />
+
+                default:
+                  return ''
+
+              }
             })
           }
-        </div>
+        </Layout>
+
       </main>
 
-      <Footer></Footer>
-    </div>
+
+    </>
   )
 }
 
-export async function getStaticProps(){
 
-  const GET_POSTS = gql`
-    query GetAllPosts{
-      posts {
-        nodes {
-          title
-          content
-          uri
-          date
+export async function getServerSideProps() {
+  const HOME_QUERY = gql`
+  query HOME_QUERY {
+    menu(idType: SLUG, id: "main-menu") {
+        menuItems {
+          nodes {
+            label
+            uri
+          }
+        }
+      }
+    page(idType: URI, id: "home") {
+      title
+      slug
+      uri
+      sections {
+        sections {
+          ... on SectionsSectionsBannerLayout {
+            title
+            content
+            button{
+              title
+              target
+              url
+            }
+            image {
+              node {
+                mediaItemUrl
+                sizes
+              }
+            }
+          }
+          ... on SectionsSectionsAboutKosovaLayout {
+            content
+            title
+            button {
+              title
+              url
+            }
+            image {
+              node {
+                mediaItemUrl
+                sizes
+              }
+            }
+          }
+          ... on SectionsSectionsMostVisitedPlacesLayout {
+            content
+            title
+            places {
+              places {
+                edges {
+                  node {
+                    ... on Post {
+                      id
+                      uri
+                      title
+                      featuredImage {
+                        node {
+                          mediaItemUrl
+                          sizes
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }
+  }
   `
   const response = await client.query({
-    query: GET_POSTS
+    query: HOME_QUERY,
   })
-  const posts = response?.data?.posts?.nodes
+  const page = response?.data?.page
+  const menu = response?.data?.menu?.menuItems?.nodes
   return {
     props: {
-      posts
+      page,
+      menu
     }
   }
 }
+
